@@ -35,12 +35,13 @@ public MatchOutput process(MatchInput matchInput) throws Exception {
     match.setTeam2(secondTeam);
     match.setResult(matchInput.getResult());
     match.setResultMargin(match.getResultMargin());
-    match.setMatchWinner(matchInput.getWinner());
+    match.setMatchWinner(matchInput.getToss_winner());
     match.setTossDecision(match.getTossDecision());
     match.setTossWinner(match.getTossWinner());
     match.setVenue(match.getVenue());
     match.setUmpire1(matchInput.getUmpire1());
     match.setUmpire2(matchInput.getUmpire2());
+
     return match;
 }
 }

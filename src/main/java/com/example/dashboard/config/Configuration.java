@@ -1,5 +1,6 @@
 package com.example.dashboard.config;
 
+import com.example.dashboard.OutPutRepo;
 import com.example.dashboard.data.Listner;
 import com.example.dashboard.data.MatchInput;
 import com.example.dashboard.data.MatchProcessor;
@@ -10,6 +11,7 @@ import org.springframework.batch.core.configuration.annotation.EnableBatchProces
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
@@ -30,6 +32,8 @@ import javax.sql.DataSource;
 public class Configuration {
 @Autowired
 private JobBuilderFactory jobBuilderFactory;
+@Autowired
+OutPutRepo repo;
 @Autowired
 private StepBuilderFactory stepBuilderFactory;
 
@@ -53,15 +57,22 @@ public MatchProcessor processor() {
     return new MatchProcessor();
 }
 
+//@Bean
+//public JdbcBatchItemWriter<MatchOutput> writer(DataSource dataSource) {
+//    return new JdbcBatchItemWriterBuilder<MatchOutput>()
+//                   .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
+//.sql("INSERT INTO match_output " +
+//        "(id,city,date,player_of_match,venue,team1,team2,toss_winner,toss_decision,match_winner,result, result_margin,umpire1,umpire2) " +
+// "VALUES (:id,:city,:date,:playerOfMatch,:venue,:team1,:team2,:tossWinner,:tossDecision,:matchWinner,:result, :resultMargin,:umpire1,:umpire2)")
+//                   .dataSource(dataSource)
+//                   .build();
+//}
 @Bean
-public JdbcBatchItemWriter<MatchOutput> writer(DataSource dataSource) {
-    return new JdbcBatchItemWriterBuilder<MatchOutput>()
-                   .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
-.sql("INSERT INTO match_output " +
-        "(id,city,date,player_of_match,venue,team1,team2,toss_winner,toss_decision,match_winner,result, result_margin,umpire1,umpire2) " +
- "VALUES (:id,:city,:date,:playerOfMatch,:venue,:team1,:team2,:tossWinner,:tossDecision,:matchWinner,:result, :resultMargin,:umpire1,:umpire2)")
-                   .dataSource(dataSource)
-                   .build();
+public RepositoryItemWriter<MatchOutput> writer() {
+    RepositoryItemWriter<MatchOutput> itemWriter = new RepositoryItemWriter<>();
+    itemWriter.setRepository(repo);
+    itemWriter.setMethodName("save");
+    return itemWriter;
 }
 @Bean
 public Job importUserJob(Listner listner,Step step1) {
@@ -74,12 +85,12 @@ public Job importUserJob(Listner listner,Step step1) {
 }
 
 @Bean
-public Step step1(JdbcBatchItemWriter<MatchOutput> writer) {
+public Step step1() {
     return stepBuilderFactory.get("step1")
                    .<MatchInput, MatchOutput> chunk(10)
                    .reader(reader())
                    .processor(processor())
-                   .writer(writer)
+                   .writer(writer())
                    .taskExecutor(excuter())
                    .build();
 }
